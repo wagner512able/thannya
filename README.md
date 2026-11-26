@@ -2,228 +2,253 @@
 
 # THANNYA
 
-A tool for the annotation and identification of orthologous and unique microsatellites in genomes. THANNYA supports annotation of individual FASTA files and comparative identification of orthologous and unique SSRs across multiple genomes (chloroplast of
-plants/algae, mitochondria of animals). Give it **one FASTA** to annotate its SSRs or **2 or more FASTA files** to compare
-them across species (up to 30 files on the web; locally, the CLI defaults to 50 and can be raised with `--max-files`): shared, absent, longer/shorter and exclusive SSRs, with flanking regions ready for primer design.
+A tool for the annotation and identification of orthologous and unique microsatellites in genomes. THANNYA supports annotation of individual FASTA files and comparative identification of orthologous and unique SSRs across multiple genomes (chloroplasts of plants/algae, mitochondria of animals). Give it **one FASTA** to annotate its SSRs or **2 or more FASTA files** to compare them across species (up to 30 files on the web; locally, the CLI defaults to 50 and can be raised with `--max-files`): shared, absent, longer/shorter and exclusive SSRs, with flanking regions ready for primer design.
+
+Tested on **Linux** (local machines and HPC servers), **Windows 11** and **macOS**, with identical results on all platforms.
 
 ![THANNYA results page](docs/thannya_variable_markers.jpg)
 
 ## Quick start
-    pip install -e ".[web]"
-    python3 -m thannya -i fasta_folder -o results      # command line (files named 01_speciesA.fasta, 02_speciesB.fasta...)
-    python3 -m thannya -i genome.fasta -o results      # single genome: SSR annotation
-    https://thannya-ssr.onrender.com                   # local web interface
+
+```bash
+pip install -e ".[web]"
+python3 -m thannya -i fasta_folder -o results   # comparison (files named 01_speciesA.fasta, 02_speciesB.fasta, ...)
+python3 -m thannya -i genome.fasta -o results   # single genome: SSR annotation
+thannya-web                                     # local web interface (http://127.0.0.1:8000)
+```
+
+Online web interface: **https://thannya-ssr.onrender.com**
 
 ## Deployments
-* **GitHub + Render (free, online lite)**: update the deployment URL here after renaming the Render service to THANNYA.
-  Web limits: up to 30 FASTA files, 1 MB per file and 1,000,000 bp per genome. The serverless deployment also has a separate compressed-request limit of about 4.2 MB.
-* **Docker / own server (full)**: `docker build -t thannya . && docker run -p 8000:8000 thannya`.
-  Background jobs, the same 30-file / 1 MB-per-file upload limits, PDF figures and results kept for 24 h.
+
+- **Render (free, online):** https://thannya-ssr.onrender.com. Web limits: up to 30 FASTA files, 1 MB per file and 1,000,000 bp per genome.
+- **Docker / own server (full):** `docker build -t thannya . && docker run -p 8000:8000 thannya`. Background jobs, the same 30-file / 1 MB-per-file upload limits, PDF figures and results kept for 24 h.
 
 ## Citation
-Ribeiro, W. N. (2026). THANNYA: a tool for the annotation and identification of orthologous and unique microsatellites 
-in genomes (Version 1.4.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23679674
+
+Ribeiro, W. N. (2026). THANNYA: a tool for the annotation and identification of orthologous and unique microsatellites in genomes (Version 1.4.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23679674
 
 ## Author and dedication
+
 Developed by Ph.D. Wagner Nunes Ribeiro - wagner2@egresso.ufg.br. The name THANNYA is a tribute to the author’s doctoral supervisor.
 
-## Usage
-    ######################### LINUX
+## Input files
 
-    # To install and run THANNYA locally, first navigate to your home directory (user root folder), 
-    then clone the repository and enter the project directory by running:
-    git clone https://github.com/wagner512able/thannya.git and 
-    cd thannya. 
-    
-    # Next, create and activate a dedicated Conda environment using:
-    conda create -n thannya_env python=3.10 -y and
-    conda activate thannya_env. 
-    
-    # Install the package in editable mode by running: 
-    pip install --no-deps --no-build-isolation -e .
-    and install openpyxl for spreadsheet support with:
-    conda install openpyxl -y
-    
-    # Prior to running the software, ensure your input FASTA files are stored in a directory and 
-    prefixed with a two-digit numerical identifier (e.g., 01_species.fasta, 02_species.fasta). 
-    If your files lack this prefix, you can automatically rename them by navigating to your 
-    FASTA folder and running the following Bash script:
-    
-    cd /path/to/your/fasta/directory
-    i=1
-    for f in *.fasta; do
-    if [[ ! "$f" =~ ^[0-9]{2}_ ]]; then
-        newname=$(printf "%02d_%s" "$i" "$f")
-        mv "$f" "$newname"
-        ((i++))
-    fi
-    done
+Input FASTA files must start with a two-digit number followed by an underscore (`01_speciesA.fasta`, `02_speciesB.fasta`, ...). The number sets the order of the species in the report and in the plots; **the first file is the reference genome**.
 
-    # Finally, return to the project root directory and execute THANNYA by pointing to your 
-    input folder and desired output destination using the command:
-    python3 -m thannya -i /path/to/your/fasta/directory -o /path/to/your/output/results
+## Installation and usage
 
-    # If you need to generate an additional image of specific genomic regions, use the command 
-    below according to the size of your genome:
-    python3 -m thannya -i /path/to/your/fasta/directory -o /path/to/your/output/results --region 20000-40000 # + zoomed plot
+### Linux
 
-    If you would like more specific parameters, they are listed below in the "Main Options" section.
+**1. Download THANNYA.** Go to your home directory, clone the repository and enter the project folder:
 
+```bash
+cd ~
+git clone https://github.com/wagner512able/thannya.git
+cd thannya
+```
 
-    ######################### WINDOWS (Command Prompt / CMD)
+**2. Create and activate a Conda environment:**
 
+```bash
+conda create -n thannya_env python=3.10 -y
+conda activate thannya_env
+```
 
-    # **Download and extract** the repository from GitHub (or clone it), open Command Prompt (`cmd`), and navigate 
-    to the project root folder (`thannya-main` or `thannya`).
-    
-    # **Create and activate a virtual environment:**
-    ```cmd
-    python -m venv venv
-    venv\Scripts\activate.bat
+**3. Install THANNYA** in editable mode, plus `openpyxl` for spreadsheet support:
 
-    # Install the package and dependencies locally:
-    pip install -e ".[web]"
-    pip install openpyxl
+```bash
+pip install --no-deps --no-build-isolation -e .
+conda install openpyxl -y
+```
 
-    # Verify the installation by running the built-in demonstration test:
-    python tests/test_demo.py
+**4. Prepare the input files.** Store your FASTA files in one folder, each prefixed with a two-digit number. If your files lack this prefix, go to the FASTA folder and rename them automatically:
 
-    If the new files are generated and the terminal displays:
-    OK: 14 loci; rotation/reverse strand, flank SNPs, below-threshold search, numbering and zoom handled.
-    the software is properly installed.
+```bash
+cd /path/to/your/fasta/directory
+i=1
+for f in *.fasta; do
+  if [[ ! "$f" =~ ^[0-9]{2}_ ]]; then
+    newname=$(printf "%02d_%s" "$i" "$f")
+    mv "$f" "$newname"
+    ((i++))
+  fi
+done
+```
 
-    # Running your own data via Python script
-    With your virtual environment activated (venv\Scripts\activate.bat), create a file named run_thannya.py 
-    in the root directory using any text editor (e.g., Notepad or VS Code).
+**5. Run THANNYA** from the project folder, pointing to your input folder and output destination:
 
-    #The example below runs two comparative batch analyses sequentially (50 Corymbia plastomes and 150 
-    Arecaceae plastomes), saving the results inside their respective folders. Note that max_files=200 is 
-    passed for the second dataset because the default limit is 50 genomes:
-    ---------------------------------------------------------
-    Python
-    import os
-    import time
-    from thannya.cli import run
+```bash
+python3 -m thannya -i /path/to/your/fasta/directory -o /path/to/your/output/results
+```
 
-    # Dataset paths
-    input_corymbia = r"C:\path\to\your\50_Corymbias"
-    output_corymbia = r"C:\path\to\your\50_Corymbias\results_thannya"
+To also draw a zoomed plot of a specific region (coordinates of the reference genome):
 
-    input_arecaceae = r"C:\path\to\your\150_Arecaceae"
-    output_arecaceae = r"C:\path\to\your\150_Arecaceae\results_thannya"
+```bash
+python3 -m thannya -i /path/to/your/fasta/directory -o /path/to/your/output/results --region 20000-40000
+```
 
-    print("=" * 60)
-    print("STARTING ANALYSIS OF THE CORYMBIAS (50 genomes)")
-    print("=" * 60)
+More parameters are listed in [Main options](#main-options).
 
-    start_cory = time.time()
-    run(input_corymbia, output_corymbia, log=print)
-    end_cory = time.time()
-    time_cory = end_cory - start_cory
+### Windows (Command Prompt / CMD)
 
-    print(f"\n[SUCCESS] Corymbias completed in: {time_cory:.2f} seconds ({time_cory / 60:.2f} minutes)\n")
+**1. Download THANNYA.** Download and extract the repository from GitHub (*Code → Download ZIP*) or clone it. Open the Command Prompt (`cmd`) and go to the project folder (`thannya-main` or `thannya`).
 
-    print("=" * 60)
-    print("BEGINNING ANALYSIS OF ARECACEAE (150 genomes)")
-    print("=" * 60)
+**2. Create and activate a virtual environment:**
 
-    start_areca = time.time()
-    # Added max_files=200 to allow reading all 150 genomes (default is 50)
-    run(input_arecaceae, output_arecaceae, max_files=200, log=print)
-    end_areca = time.time()
-    time_areca = end_areca - start_areca
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
+```
 
-    print(f"\n[SUCCESS] Arecaceae completed in: {time_areca:.2f} seconds ({time_areca / 60:.2f} minutes)\n")
+**3. Install the package and its dependencies:**
 
-    print("=" * 60)
-    print("PROCESSING SUMMARY")
-    print(f"-> Corymbias (50 genomes): {time_cory / 60:.2f} min")
-    print(f"-> Arecaceae (150 genomes): {time_areca / 60:.2f} min")
-    print(f"-> Overall total time: {(time_cory + time_areca) / 60:.2f} min")
-    print("=" * 60)
-    ------------------------------------------------------
+```cmd
+pip install -e ".[web]"
+pip install openpyxl
+```
 
-    # Tip (Single analysis or single-genome annotation): If you want to run only one comparative dataset or 
-    annotate a single FASTA file, simply keep only the corresponding input / output path variables and a single
-    run(input_path, output_path, log=print) block (pointing input_path either to a single folder or directly to
-    your single .fasta file), removing the second dataset block.
+**4. Verify the installation** with the built-in demonstration test:
 
-    # Execute the script:
-    python run_thannya.py
+```cmd
+python tests/test_demo.py
+```
 
+The software is properly installed if the terminal displays:
 
-    ######################### macOS (Terminal)
+```
+OK: 14 loci; rotation/reverse strand, flank SNPs, below-threshold search, numbering and zoom handled.
+```
 
+**5. Run your own data with a Python script.** With the virtual environment activated, create a file named `run_thannya.py` in the project folder using any text editor (e.g. Notepad or VS Code). The example below runs two comparative analyses in sequence (50 *Corymbia* plastomes and 150 Arecaceae plastomes) and saves the results inside their respective folders. `max_files=200` is passed for the second dataset because the default limit is 50 genomes.
 
-    Tested on macOS 15.7.7 (Intel Core i7) with the Python 3.9.6 that ships with macOS. Apple Silicon (M1–M4) Macs use the same commands.
-    - On macOS, always use `python3` (not `python`): macOS only provides the `python3` command.
-    
-    **1. Check Python (3.9 or later is required)**
-    ```bash
-    python3 --version
-    ```
-    If macOS asks you to install the *command line developer tools*, accept it (or run `xcode-select --install`) 
-    and then repeat the command.
+```python
+import os
+import time
+from thannya.cli import run
 
-    **2. Download THANNYA**
+# Dataset paths
+input_corymbia = r"C:\path\to\your\50_Corymbias"
+output_corymbia = r"C:\path\to\your\50_Corymbias\results_thannya"
 
-    Download the ZIP from GitHub (*Code → Download ZIP*), extract it (e.g. into `~/Documents/thannya`) and enter 
-    the folder:
-    ```bash
-    cd ~/Documents/thannya/thannya-main
-    ```
-    Alternatively, clone the repository with `git clone https://github.com/wagner512able/thannya.git` and enter 
-    the `thannya` folder.
+input_arecaceae = r"C:\path\to\your\150_Arecaceae"
+output_arecaceae = r"C:\path\to\your\150_Arecaceae\results_thannya"
 
-    **3. Create and activate a virtual environment**
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
-    The prompt now starts with `(venv)`. Run `source venv/bin/activate` again every time you open a new 
-    Terminal window.
+print("=" * 60)
+print("STARTING ANALYSIS OF THE CORYMBIAS (50 genomes)")
+print("=" * 60)
 
-    **4. Install THANNYA**
-    ```bash
-    pip install --upgrade pip
-    pip install -e ".[web]"
-    ```
+start_cory = time.time()
+run(input_corymbia, output_corymbia, log=print)
+time_cory = time.time() - start_cory
 
-    **5. Verify the installation**
-    ```bash
-    python3 -m thannya --version     # prints the installed version (e.g. 1.4.0)
-    python3 tests/test_demo.py
-    ```
-    The installation is correct if the test ends with:
-    `OK: 14 loci; rotation/reverse strand, flank SNPs, below-threshold search, numbering and zoom handled.`
+print(f"\n[SUCCESS] Corymbias completed in: {time_cory:.2f} seconds ({time_cory / 60:.2f} minutes)\n")
 
-    **6. Run your own data**
+print("=" * 60)
+print("BEGINNING ANALYSIS OF ARECACEAE (150 genomes)")
+print("=" * 60)
 
-    *Option A: command line*
-    ```bash
-    python3 -m thannya -i "$HOME/Documents/FASTAS/my_genomes" -o "$HOME/Documents/FASTAS/my_genomes/results_thannya"
-    ```
-    Use quotes around paths that contain spaces, and use `$HOME` instead of `~` inside quotes. 
-    Add `--max-files 200` to compare more than 50 genomes.
+start_areca = time.time()
+# max_files=200 allows reading all 150 genomes (default is 50)
+run(input_arecaceae, output_arecaceae, max_files=200, log=print)
+time_areca = time.time() - start_areca
 
-    *Option B: Python script (several datasets in sequence)*
+print(f"\n[SUCCESS] Arecaceae completed in: {time_areca:.2f} seconds ({time_areca / 60:.2f} minutes)\n")
 
-    Create a file named `run_thannya.py` in the THANNYA folder (for example with `nano run_thannya.py`) containing:
-    ```python
-    import os
-    import time
-    from thannya.cli import run
+print("=" * 60)
+print("PROCESSING SUMMARY")
+print(f"-> Corymbias (50 genomes): {time_cory / 60:.2f} min")
+print(f"-> Arecaceae (150 genomes): {time_areca / 60:.2f} min")
+print(f"-> Overall total time: {(time_cory + time_areca) / 60:.2f} min")
+print("=" * 60)
+```
 
-    # folder that contains one sub-folder of FASTA files per dataset
-    base = os.path.expanduser("~/Documents/FASTAS")
+Run the script:
 
-    # (sub-folder, maximum number of genomes)
-    datasets = [
+```cmd
+python run_thannya.py
+```
+
+> **Tip:** to run a single dataset or annotate a single FASTA file, keep only one pair of input/output paths and one `run(input_path, output_path, log=print)` call, pointing `input_path` either to a folder or directly to a single `.fasta` file.
+
+### macOS (Terminal)
+
+Tested on macOS 15.7.7 (Intel Core i7) with the Python 3.9.6 that ships with macOS. Apple Silicon (M1–M4) Macs use the same commands. On macOS, always use `python3` (not `python`): macOS only provides the `python3` command.
+
+**1. Check Python** (3.9 or later is required):
+
+```bash
+python3 --version
+```
+
+If macOS asks you to install the *command line developer tools*, accept it (or run `xcode-select --install`) and then repeat the command.
+
+**2. Download THANNYA.** Download the ZIP from GitHub (*Code → Download ZIP*), extract it (e.g. into `~/Documents/thannya`) and enter the folder:
+
+```bash
+cd ~/Documents/thannya/thannya-main
+```
+
+Alternatively, clone the repository with `git clone https://github.com/wagner512able/thannya.git` and enter the `thannya` folder.
+
+**3. Create and activate a virtual environment:**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+The prompt now starts with `(venv)`. Run `source venv/bin/activate` again every time you open a new Terminal window.
+
+**4. Install THANNYA:**
+
+```bash
+pip install --upgrade pip
+pip install -e ".[web]"
+```
+
+**5. Verify the installation:**
+
+```bash
+python3 -m thannya --version     # prints the installed version (e.g. 1.4.0)
+python3 tests/test_demo.py
+```
+
+The installation is correct if the test ends with:
+
+```
+OK: 14 loci; rotation/reverse strand, flank SNPs, below-threshold search, numbering and zoom handled.
+```
+
+**6. Run your own data.**
+
+*Option A: command line*
+
+```bash
+python3 -m thannya -i "$HOME/Documents/FASTAS/my_genomes" -o "$HOME/Documents/FASTAS/my_genomes/results_thannya"
+```
+
+Use quotes around paths that contain spaces, and use `$HOME` instead of `~` inside quotes. Add `--max-files 200` to compare more than 50 genomes.
+
+*Option B: Python script (several datasets in sequence)*
+
+Create a file named `run_thannya.py` in the THANNYA folder (for example with `nano run_thannya.py`) containing:
+
+```python
+import os
+import time
+from thannya.cli import run
+
+# folder that contains one sub-folder of FASTA files per dataset
+base = os.path.expanduser("~/Documents/FASTAS")
+
+# (sub-folder, maximum number of genomes)
+datasets = [
     ("dataset_1", 50),
     ("dataset_2", 200),
-    ]
+]
 
-    for folder, maxf in datasets:
+for folder, maxf in datasets:
     inp = os.path.join(base, folder)
     out = os.path.join(inp, "results_thannya")
     if not os.path.isdir(inp):
@@ -235,51 +260,43 @@ Developed by Ph.D. Wagner Nunes Ribeiro - wagner2@egresso.ufg.br. The name THANN
     run(inp, out, max_files=maxf, log=print)
     dt = time.time() - t0
     print(f"\n[SUCCESS] {folder} completed in {dt:.2f} s ({dt/60:.2f} min)\n")
-    ```
-    Save it (in nano: `Ctrl+O`, `Enter`, `Ctrl+X`) and run it, keeping a copy of the screen output in a log file:
-    ```bash
-    python3 run_thannya.py 2>&1 | tee thannya_log.txt
-    ```
+```
 
-    **7. Local web interface (optional)**
-    ```bash
-    thannya-web
-    ```
-    Open http://127.0.0.1:8000 in your browser; press `Ctrl+C` in the Terminal to stop the server.
+Save it (in nano: `Ctrl+O`, `Enter`, `Ctrl+X`) and run it, keeping a copy of the screen output in a log file:
 
-**Notes**
-- Input FASTA files must start with a two-digit number that sets the processing order (`01_speciesA.fasta`, `02_speciesB.fasta`, ...); genome 01 is the reference.
-- PDF figures (`--pdf`) additionally require `brew install cairo` and `pip install cairosvg`.
+```bash
+python3 run_thannya.py 2>&1 | tee thannya_log.txt
+```
 
-    
+**7. Local web interface (optional):**
 
-Input files: `01_speciesA.fasta`, `02_speciesB.fasta`, ... The number sets the order of the
-species in the report and in the plots; the first file is the reference genome.
+```bash
+thannya-web
+```
+
+Open http://127.0.0.1:8000 in your browser; press `Ctrl+C` in the Terminal to stop the server.
+
+> **Note:** PDF figures (`--pdf`) additionally require `brew install cairo` and `pip install cairosvg`.
 
 ## Accepted bases and SSRs compromised by N
-Only **A, C, G, T and N** (any case) are accepted. Files containing any other character (IUPAC codes
-such as R/Y, U, gaps, digits, protein sequence...) are rejected: the web page scans each file when it is
-added, flags the offending files in red with the characters found and blocks the run until they are
-fixed or removed (the server checks again; the command line applies the same rule and lists every
-offending file). N bases are accepted but are never part of an annotated SSR. A repeat tract containing N is not
-annotated. If the SSR itself is valid but its requested left or right flanking window contains N,
-the SSR annotation is retained and marked as **compromised** (red cross in the figures;
-`compromised_by_N` in GFF3; *Compromised by N* / *N bases in flanks* in Excel). To prevent
-unsafe primer-design input, that record is omitted from every flanked-sequence FASTA export, and
-its coordinates and left/right N counts are listed in `N_flank_warnings.tsv`. The CLI and web
-logs also report how many valid SSRs had their flanked sequences withheld. The *Summary* sheet
-reports the number of N bases per genome and SSRs compromised by N.
+
+Only **A, C, G, T and N** (any case) are accepted. Files containing any other character (IUPAC codes such as R/Y, U, gaps, digits, protein sequence...) are rejected: the web page scans each file when it is added, flags the offending files in red with the characters found and blocks the run until they are fixed or removed (the server checks again; the command line applies the same rule and lists every offending file).
+
+N bases are accepted but are never part of an annotated SSR. A repeat tract containing N is not annotated. If the SSR itself is valid but its requested left or right flanking window contains N, the SSR annotation is retained and marked as **compromised** (red cross in the figures; `compromised_by_N` in GFF3; *Compromised by N* / *N bases in flanks* in Excel). To prevent unsafe primer-design input, that record is omitted from every flanked-sequence FASTA export, and its coordinates and left/right N counts are listed in `N_flank_warnings.tsv`. The CLI and web logs also report how many valid SSRs had their flanked sequences withheld. The *Summary* sheet reports the number of N bases per genome and SSRs compromised by N.
 
 ## Single-genome annotation mode
-With a single FASTA (`thannya -i genome.fasta -o out`, or one file uploaded to the web page) there is
-nothing to compare, so THANNYA annotates the SSRs of that genome only and writes:
-`thannya_report.xlsx` (SSR_annotation, Summary with SSRs per class and per kb, Motif_counts, Parameters),
-`thannya_SSRs.gff3` (feature type `microsatellite`, loadable in genome browsers), `SSRs_with_flanks.fasta`
-(SSR highlighted by case, flanks of the length you chose) and `thannya_annotation_map.svg/.pdf`
-(map of the SSRs along each contig, colored by class, plus counts per class). Every SSR is listed,
-including copies in inverted repeats. Comparison-only options (similarity, anchor, relax, regions) are ignored.
+
+With a single FASTA (`thannya -i genome.fasta -o out`, or one file uploaded to the web page) there is nothing to compare, so THANNYA annotates the SSRs of that genome only and writes:
+
+- `thannya_report.xlsx` (SSR_annotation, Summary with SSRs per class and per kb, Motif_counts, Parameters)
+- `thannya_SSRs.gff3` (feature type `microsatellite`, loadable in genome browsers)
+- `SSRs_with_flanks.fasta` (SSR highlighted by case, flanks of the length you chose)
+- `thannya_annotation_map.svg/.pdf` (map of the SSRs along each contig, colored by class, plus counts per class)
+
+Every SSR is listed, including copies in inverted repeats. Comparison-only options (similarity, anchor, relax, regions) are ignored.
 
 ## Main options
+
 | Option | Default (MISA-Web) |
 |---|---|
 | `--mono` / `--di` / `--tri` / `--tetra` / `--penta` / `--hexa` | 10 / 6 / 5 / 5 / 5 / 5 (0 disables a class) |
@@ -293,71 +310,52 @@ including copies in inverted repeats. Comparison-only options (similarity, ancho
 | `--threads`, `--pdf`, `--max-files` | 1, off, 50 |
 
 ## What counts as "the same SSR"
-Same canonical motif (AT = TA, A = T, ...) **and** same region, defined by similar flanking
-sequences (k-mers; tolerant to SNPs, reverse strand and rotation of circular genomes).
-A SNP that breaks the SSR in one species makes it absent there (or exclusive to the species
-that keeps it). A different number of repeats keeps the same locus and is flagged as length
-polymorphism.
+
+Same canonical motif (AT = TA, A = T, ...) **and** same region, defined by similar flanking sequences (k-mers; tolerant to SNPs, reverse strand and rotation of circular genomes). A SNP that breaks the SSR in one species makes it absent there (or exclusive to the species that keeps it). A different number of repeats keeps the same locus and is flagged as length polymorphism.
 
 ## Real vs. threshold-only exclusives
-For each locus absent in a species the program looks for the same locus with relaxed
-thresholds. If found, the SSR is "below threshold" there (e.g. poly-A 9 vs. 10). Only SSRs
-with no homologous locus elsewhere get the **gold star** (real exclusive marker); a
-**black X** marks exclusivity caused only by the threshold. The *Notes* column flags
-homopolymers (validate) and multiple copies in one species (possible IR).
+
+For each locus absent in a species the program looks for the same locus with relaxed thresholds. If found, the SSR is "below threshold" there (e.g. poly-A 9 vs. 10). Only SSRs with no homologous locus elsewhere get the **gold star** (real exclusive marker); a **black X** marks exclusivity caused only by the threshold. The *Notes* column flags homopolymers (validate) and multiple copies in one species (possible IR).
 
 ## Variation relative to the other species
-`SSR_comparison` has two extra columns: **Variation type** (*Conserved*, *Length polymorphism*,
-*Below threshold in some species*, *Absent in some species*) and **Differences vs. other
-species**, which lists each species that is *longer*, *shorter* or has *no SSR at the locus*
-relative to the median of the other species (e.g. `01: longer (10 vs 9)`). The sheet
-`Variation_per_species` gives the same call for every locus x species; `Variation_by_type` and
-`Variation_by_species` summarize the counts.
+
+`SSR_comparison` has two extra columns: **Variation type** (*Conserved*, *Length polymorphism*, *Below threshold in some species*, *Absent in some species*) and **Differences vs. other species**, which lists each species that is *longer*, *shorter* or has *no SSR at the locus* relative to the median of the other species (e.g. `01: longer (10 vs 9)`). The sheet `Variation_per_species` gives the same call for every locus × species; `Variation_by_type` and `Variation_by_species` summarize the counts.
 
 ## SSR numbering and coordinates
-SSRs are numbered `SSR.01, SSR.02, ...` from top to bottom along the reference (first)
-genome; the numbers and exact positions are in the report (`SSR_comparison`, with the
-reference-axis position and per-species coordinates in `SSR_per_species`). The figures carry no
-numbers, to keep them clean; hovering over an SSR mark in the SVG shows its ID, motif and
-position. Each species is a horizontal axis (file order, top to bottom), so the figure grows vertically and stays
-readable with ~50 genomes. The first (reference) axis carries light-grey coordinate ticks above the line, every 10 kb (adaptive step for genomes < 40 kb and
-for zoomed plots) so readers can locate each SSR. Loci absent in the reference are placed by
-interpolation between shared neighbouring loci.
+
+SSRs are numbered `SSR.01, SSR.02, ...` from top to bottom along the reference (first) genome; the numbers and exact positions are in the report (`SSR_comparison`, with the reference-axis position and per-species coordinates in `SSR_per_species`). The figures carry no numbers, to keep them clean; hovering over an SSR mark in the SVG shows its ID, motif and position.
+
+Each species is a horizontal axis (file order, top to bottom), so the figure grows vertically and stays readable with ~50 genomes. The first (reference) axis carries light-grey coordinate ticks above the line, every 10 kb (adaptive step for genomes < 40 kb and for zoomed plots), so readers can locate each SSR. Loci absent in the reference are placed by interpolation between shared neighbouring loci.
 
 ## Outputs
+
 - `thannya_report.xlsx`: SSR_comparison, Presence_Absence, SSR_per_species, Summary, Variation_per_species, Variation_by_type, Variation_by_species, Parameters
-- FASTA outputs (choose with `--fasta-layout`; the SSR is highlighted by case, see `--ssr-case`;
-  every header has `ssr_in_seq=START-END`, the SSR position inside the extracted sequence, for primer design):
+- FASTA outputs (choose with `--fasta-layout`; the SSR is highlighted by case, see `--ssr-case`; every header has `ssr_in_seq=START-END`, the SSR position inside the extracted sequence, for primer design):
   - `fasta_per_species/NN_species_SSRs.fasta`: all SSRs of one species/input file, as found in its genome
-  - `fasta_per_locus/SSR.NN_class_motif.fasta`: one file per SSR locus with the copy from each species,
-    reverse-complemented to the orientation of the first copy so the records can be aligned directly
-    (only copies that meet the threshold are included)
+  - `fasta_per_locus/SSR.NN_class_motif.fasta`: one file per SSR locus with the copy from each species, reverse-complemented to the orientation of the first copy so the records can be aligned directly (only copies that meet the threshold are included)
   - `SSRs_with_flanks.fasta`: one record per locus (first species in which it occurs)
-- `thannya_comparison.svg` (all loci), `thannya_variable_markers.svg` (only absences,
-  exclusives and polymorphisms) and `thannya_region_START-END.svg` (zoom); `.pdf` with `--pdf`
+- `thannya_comparison.svg` (all loci), `thannya_variable_markers.svg` (only absences, exclusives and polymorphisms) and `thannya_region_START-END.svg` (zoom); `.pdf` with `--pdf`
 
 ## Web version (server with background jobs)
 
-The public web interface accepts at most **30 FASTA files**, each no larger than **1 MB** (and up to 1,000,000 bp). For larger batches or files, use the local command-line version. The CLI defaults to 50 files and its `--max-files` option can raise that limit as needed.
-    pip install -e ".[web,pdf]"
-    thannya-web --port 8000                    # development server
-    gunicorn -w 1 --threads 8 -b 0.0.0.0:8000 thannya.web.app:app    # production
-    # or: docker build -t thannya . && docker run -p 8000:8000 -v thannya_data:/data thannya
+The public web interface accepts at most **30 FASTA files**, each no larger than **1 MB** (and up to 1,000,000 bp). For larger batches or files, use the local command-line version; the CLI defaults to 50 files and its `--max-files` option can raise that limit as needed.
 
-Open the page, drop 1 to 30 FASTA files (1 = SSR annotation only), reorder them (the order becomes the `NN_` prefixes),
-edit the species labels, set the thresholds and run. Results (ZIP, Excel, SVG/PDF figures, FASTAs)
-are shown in the page and kept for 24 h. The server accepts organellar genomes only
-(default: 1 MB and 1,000,000 bp per file). Each analysis runs in its own subprocess, with a
-15-minute limit, at most 2 at a time and 20 analyses per IP per hour. Contig names are sanitized
-(prevents spreadsheet-formula injection) and job IDs are random 128-bit tokens. Limits can be
-changed with `THANNYA_MAX_FILE_MB`, `THANNYA_MAX_GENOME_BP`, `THANNYA_MAX_CONCURRENT`,
-`THANNYA_JOB_TTL_HOURS`, `THANNYA_JOBS_PER_HOUR` and `THANNYA_WORKDIR`. For a public
-deployment put it behind HTTPS (e.g. nginx) with a request-size limit of ~35 MB and keep
-`gunicorn -w 1` (concurrency control is per process).
+```bash
+pip install -e ".[web,pdf]"
+thannya-web --port 8000                                          # development server
+gunicorn -w 1 --threads 8 -b 0.0.0.0:8000 thannya.web.app:app   # production
+# or: docker build -t thannya . && docker run -p 8000:8000 -v thannya_data:/data thannya
+```
 
-## Known limitations of the prototype
+Open the page, drop 1 to 30 FASTA files (1 = SSR annotation only), reorder them (the order becomes the `NN_` prefixes), edit the species labels, set the thresholds and run. Results (ZIP, Excel, SVG/PDF figures, FASTAs) are shown in the page and kept for 24 h. The server accepts organellar genomes only (default: 1 MB and 1,000,000 bp per file). Each analysis runs in its own subprocess, with a 15-minute limit, at most 2 at a time and 20 analyses per IP per hour. Contig names are sanitized (prevents spreadsheet-formula injection) and job IDs are random 128-bit tokens.
+
+Limits can be changed with `THANNYA_MAX_FILE_MB`, `THANNYA_MAX_GENOME_BP`, `THANNYA_MAX_CONCURRENT`, `THANNYA_JOB_TTL_HOURS`, `THANNYA_JOBS_PER_HOUR` and `THANNYA_WORKDIR`. For a public deployment put it behind HTTPS (e.g. nginx) with a request-size limit of ~35 MB and keep `gunicorn -w 1` (concurrency control is per process).
+
+## Known limitations
+
 - Perfect SSRs only (no compound/interrupted SSRs); SSRs spanning the origin of a circular genome are not detected.
 - Flanks with large indels or very divergent species may fail to cluster: tune `--similarity` / `--anchor`.
+- `--threads` parallelizes SSR mining only; locus clustering and the below-threshold search run on a single core. THANNYA is designed for organellar genomes: nuclear chromosomes can be compared, but runs take hours (5–22 h for five chromosomes of 25–71 Mb) and exclusivity calls are affected by assembly gaps and repetitive flanks.
 - Plots flip axes of reverse-strand genomes but do not normalize rotations of circular genomes.
 - In zoom plots only the first copy of multi-copy loci (e.g. in inverted repeats) is drawn.
 - The web page keeps results in a local folder (no database/accounts); the Docker image was not built in the development environment.
